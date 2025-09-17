@@ -1,0 +1,70 @@
+﻿@{
+    ViewData["Title"] = "Management";
+}
+
+<div id="management" class="view active">
+    <h2>Management Dashboard</h2>
+    <div class="stats-container">
+        <div class="stat-card">
+            <h3>Total Claims</h3>
+            <p class="stat-value">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>Pending Approval</h3>
+            <p class="stat-value">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>Total Amount</h3>
+            <p class="stat-value">R0</p>
+        </div>
+    </div>
+
+    <h3>Claims Requiring Attention</h3>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Submitted</th>
+                <th>Contract</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+       <tbody>
+            <tr>
+                <td>6212</td>
+                <td>2025-09-12</td>
+                <td>Prog 2025</td>
+                <td>R675.00</td>
+                <td><span class="status pending">Pending</span></td>
+                <td>
+                    <button class="btn-sm btn-primary">Review</button>
+                </td>
+            </tr>
+            <tr>
+                
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="report-controls" style="margin-top: 30px;">
+        <h3>Generate Reports</h3>
+        <div class="form-group">
+            <label for="report-type">Report Type</label>
+            <select id="report-type">
+                <option value="monthly">Monthly Summary</option>
+                <option value="contract">By Contract</option>
+                <option value="category">By Category</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="report-period">Period</label>
+            <input type="month" id="report-period">
+        </div>
+        <button class="btn-primary">Generate Report</button>
+    </div>
+</div>
+
+
+

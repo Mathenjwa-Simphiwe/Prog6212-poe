@@ -1,0 +1,67 @@
+﻿@{
+    ViewData["Title"] = "Upload Contract Claim";
+}
+
+<h2>Upload Contract Claim </h2>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Index" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group mb-3">
+                < class="control-label">Proof of Payment File</>
+                < class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png" />
+                < class="text-danger"></>
+                <small class="form-text text-muted">Allowed formats: PDF, JPG, JPEG, PNG. Maximum size: 5MB.</small>
+            </div>
+
+            <div class="form-group mb-3">
+                < class="control-label">Claim ID (Optional)</label>
+                < class="form-control" />
+                < class="text-danger"></>
+            </div>
+
+            <div class="form-group mb-3">
+                < class="control-label">Customer Name (Optional)</label>
+                <class="form-control" />
+                < class="text-danger"></>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Upload</button>
+            </div>
+        </form>
+
+        @if (ViewBag.Message != null)
+        {
+            <div class="alert alert-success mt-3" role="alert">
+                @ViewBag.Message
+            </div>
+        }
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Upload Guidelines</h5>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li>Only upload payment proof documents (receipts, transaction confirmations, etc.)</li>
+                    <li>Accepted file formats: PDF, JPG, JPEG, PNG</li>
+                    <li>Maximum file size: 5MB</li>
+                    <li>Include Order ID and Customer Name if available for easier processing</li>
+                    <li>Files will be stored securely in Azure Blob Storage and File Share</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

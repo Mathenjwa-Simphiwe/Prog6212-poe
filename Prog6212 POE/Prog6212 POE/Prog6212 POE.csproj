@@ -7,11 +7,4 @@
     <RootNamespace>Prog6212_POE</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Views\Management\" />
-    <Folder Include="Views\Track\" />
-    <Folder Include="Views\Upload\" />
-    <Folder Include="Views\Submit\" />
-  </ItemGroup>
-
 </Project>

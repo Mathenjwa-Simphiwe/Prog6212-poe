@@ -1,0 +1,46 @@
+﻿@{
+    ViewData["Title"] = "Submit Claim";
+}
+
+<div id="submit-claim" class="view active">
+    <h2>Submit New Claim</h2>
+    <form class="claim-form">
+        <div class="form-group">
+            <label for="contract">Contract</label>
+            <select id="contract" required>
+                <option value="">Select Contract</option>
+                
+                </select>
+        </div>
+        <div class="form-group">
+            <label for="claim-date">Claim Date</label>
+            <input type="date" id="claim-date" required>
+        </div>
+        <div class="form-group">
+            <label for="category">Category</label>
+            <select id="category" required>
+                <option value="">Select Category</option>
+                <option value="labor">Labor</option>
+                <option value="materials">Materials</option>
+                <option value="equipment">Equipment</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="amount">Amount</label>
+            <input type="number" id="amount" step="0.01" min="0" required>
+        </div>
+        <div class="form-group">
+            <label for="receipt">Upload Receipt (Optional)</label>
+            <input type="file" id="receipt">
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Submit Claim</button>
+            <button type="reset" class="btn-secondary">Clear Form</button>
+        </div>
+    </form>
+</div>
