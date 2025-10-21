@@ -37,10 +37,8 @@ namespace Prog6212_POE.Controllers
                         return View("Index", model);
                     }
 
-                    model.FileName = model.Receipt.FileName;
-
-                    // In a real application, you would save the file here:
-                    // await SaveFileToServer(model.Receipt, model.Id);
+                    // If you keep FileName, set it here
+                    // model.FileName = model.Receipt.FileName;
                 }
 
                 model.Id = _nextId++;

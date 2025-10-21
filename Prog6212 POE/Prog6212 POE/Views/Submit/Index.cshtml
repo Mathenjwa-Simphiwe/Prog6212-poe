@@ -4,15 +4,26 @@
 @{
     ViewData["Title"] = "Submit Claim";
 }
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
 
-<div id="submit-claim" class="view active">
-    <h2>Submit New Claim</h2>
+<div class="alert alert-info">
+    <h5>Debug Info:</h5>
+    <p>Model is null: @(Model == null)</p>
+    <p>TempData Success: @(TempData["Success"]?.ToString() ?? "None")</p>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
     
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success">@TempData["Success"]</div>
-    }
-    
+  
+
+    <!-- Show validation summary -->
+    <div asp-validation-summary="All" class="alert alert-danger"></div>
     <form method="post" asp-action="SubmitClaim" enctype="multipart/form-data" class="claim-form">
         <div class="form-group">
             <label asp-for="Contract"></label>
@@ -86,18 +97,18 @@
 
 @section Scripts {
     <script>
-        // Auto-calculate amount when hours or rate changes
-        document.getElementById('Hours')?.addEventListener('input', calculateAmount);
+        // Auto-calculate amount when hours or rate changes - FIXED IDs
+        document.getElementById('HoursWorked')?.addEventListener('input', calculateAmount);
         document.getElementById('Rate')?.addEventListener('input', calculateAmount);
-        
+
         function calculateAmount() {
-            const hours = parseFloat(document.getElementById('Hours')?.value) || 0;
+            const hours = parseFloat(document.getElementById('HoursWorked')?.value) || 0;
             const rate = parseFloat(document.getElementById('Rate')?.value) || 0;
             const amount = hours * rate;
             document.querySelector('input[readonly]').value = amount.toFixed(2);
         }
 
-                // File upload functionality
+        // File upload functionality
         function displayFileName(input) {
             const fileNameDisplay = document.getElementById('file-name-display');
             const fileLabel = document.querySelector('.custom-file-label');
@@ -139,6 +150,11 @@
             document.getElementById('file-name-display').innerHTML = '';
             document.querySelector('.custom-file-label').textContent = 'Choose file (PDF, DOCX, XLSX - max 5MB)';
         });
-    </script>
 
+        // Calculate on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            calculateAmount();
+        });
+    </script>
+}
         }

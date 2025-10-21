@@ -10,7 +10,7 @@
         public decimal Rate { get; set; }
         public decimal Amount { get; set; }
         public IFormFile Receipt { get; set; }
-        public string FileName { get; set; }
+        
         public string Status { get; set; } = "Pending";
     }
 }
