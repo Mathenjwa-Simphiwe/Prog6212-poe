@@ -1,49 +1,64 @@
-﻿@{
+﻿@using Prog6212_POE.ViewModel
+@model List<ClaimViewModel>
+
+@{
     ViewData["Title"] = "Track Claims";
 }
 
 <div id="track-claims" class="view active">
     <h2>Your Claims</h2>
-    <div class="filter-controls">
-        <div class="form-group">
-            <label for="status-filter">Status</label>
-            <select id="status-filter">
-                <option value="all">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-            </select>
+
+    @if (!Model.Any())
+    {
+        <p>You haven't submitted any claims yet.</p>
+    }
+    else
+    {
+        <div class="filter-controls">
+            <div class="form-group">
+                <label for="status-filter">Status</label>
+                <select id="status-filter">
+                    <option value="all">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="month-filter">Month</label>
+                <input type="month" id="month-filter">
+            </div>
+            <button class="btn-primary">Apply Filters</button>
         </div>
-        <div class="form-group">
-            <label for="month-filter">Month</label>
-            <input type="month" id="month-filter">
-        </div>
-        <button class="btn-primary">Apply Filters</button>
-    </div>
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Date</th>
-                <th>Contract</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>6212</td>
-                <td>2025-09-11</td>
-                <td>Prog-2025</td>
-                <td>R450.00</td>
-                <td><span class="status approved">Approved</span></td>
-                <td>
-                    <button class="btn-sm">View</button>
-                    <button class="btn-sm btn-secondary">Edit</button>
-                </td>
-            </tr>
-            
-        </tbody>
-    </table>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Date</th>
+                    <th>Contract</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var claim in Model)
+                {
+                    <tr>
+                        <td>@claim.Id</td>
+                        <td>@claim.ClaimDate.ToString("yyyy-MM-dd")</td>
+                        <td>@claim.Contract</td>
+                        <td>R@claim.Amount.ToString("F2")</td>
+                        <td>
+                            <span class="status @claim.Status.ToLower()">@claim.Status</span>
+                        </td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@claim.Id" class="btn-sm">View</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 </div>

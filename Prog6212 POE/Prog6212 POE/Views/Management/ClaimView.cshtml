@@ -1,0 +1,147 @@
+﻿@model ClaimModel
+
+@{
+    ViewData["Title"] = "Claim Details";
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-file-invoice"></i> Claim Details #@Model.Id
+                </h2>
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Management
+                </a>
+            </div>
+
+            <div class="row">
+                <!-- Claim Information -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-info-circle"></i> Claim Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <dl>
+                                        <dt>Claim ID</dt>
+                                        <dd>#@Model.Id</dd>
+
+                                        <dt>Submission Date</dt>
+                                        <dd>@Model.ClaimDate.ToString("yyyy-MM-dd")</dd>
+
+                                        <dt>Contract</dt>
+                                        <dd><span class="badge badge-secondary">@Model.Contract</span></dd>
+                                    </dl>
+                                </div>
+                                <div class="col-md-6">
+                                    <dl>
+                                        <dt>Category</dt>
+                                        <dd>@Model.Category</dd>
+
+                                        <dt>Status</dt>
+                                        <dd>
+                                            <span class="badge @(Model.Status == "Approved" ? "badge-success" : Model.Status == "Rejected" ? "badge-danger" : "badge-warning")">
+                                                @Model.Status
+                                            </span>
+                                        </dd>
+
+                                        <dt>Receipt</dt>
+                                        <dd>
+                                            @if (!string.IsNullOrEmpty(Model.FileName))
+                                            {
+                                                <span class="badge badge-info"><i class="fas fa-file"></i> @Model.FileName</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">No receipt uploaded</span>
+                                            }
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Details -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-calculator"></i> Financial Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-4">
+                                    <div class="border rounded p-3">
+                                        <h6>Hours Worked</h6>
+                                        <h3 class="text-primary">@Model.HoursWorked</h3>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="border rounded p-3">
+                                        <h6>Hourly Rate</h6>
+                                        <h3 class="text-info">R@Model.Rate.ToString("F2")</h3>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="border rounded p-3 bg-light">
+                                        <h6>Total Amount</h6>
+                                        <h3 class="text-success">R@Model.Amount.ToString("F2")</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Panel -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0"><i class="fas fa-cogs"></i> Management Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.Status == "Pending")
+                            {
+                                <div class="d-grid gap-2">
+                                    <form method="post" asp-action="ApproveClaim">
+                                        <input type="hidden" name="id" value="@Model.Id" />
+                                        <button type="submit" class="btn btn-success btn-lg w-100 mb-2"
+                                                onclick="return confirm('Approve claim #@Model.Id for R@Model.Amount.ToString(" F2")?')">
+                                            <i class="fas fa-check-circle"></i> Approve Claim
+                                        </button>
+                                    </form>
+
+                                    <form method="post" asp-action="RejectClaim">
+                                        <input type="hidden" name="id" value="@Model.Id" />
+                                        <button type="submit" class="btn btn-danger btn-lg w-100"
+                                                onclick="return confirm('Reject claim #@Model.Id?')">
+                                            <i class="fas fa-times-circle"></i> Reject Claim
+                                        </button>
+                                    </form>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-info text-center">
+                                    <i class="fas fa-info-circle"></i><br />
+                                    This claim has already been <strong>@Model.Status.ToLower()</strong>.
+                                </div>
+                            }
+
+                            <hr>
+
+                            <div class="text-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock"></i> Last updated: @DateTime.Now.ToString("yyyy-MM-dd HH:mm")
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

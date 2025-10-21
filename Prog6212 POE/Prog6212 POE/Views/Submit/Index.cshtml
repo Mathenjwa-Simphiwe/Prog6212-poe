@@ -1,52 +1,93 @@
-﻿@{
+﻿@using Prog6212_POE.ViewModel
+@model ClaimViewModel
+
+@{
     ViewData["Title"] = "Submit Claim";
 }
 
 <div id="submit-claim" class="view active">
     <h2>Submit New Claim</h2>
-    <form class="claim-form">
+    
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    
+    <form method="post" asp-action="SubmitClaim" enctype="multipart/form-data" class="claim-form">
         <div class="form-group">
-            <label for="contract">Contract</label>
-            <select id="contract" required>
+            <label asp-for="Contract"></label>
+            <select asp-for="Contract" class="form-control" required>
                 <option value="">Select Contract</option>
-                
-                </select>
+                <option value="Prog-2025">Prog-2025</option>
+                <option value="Research-2024">Research-2024</option>
+            </select>
+            <span asp-validation-for="Contract" class="text-danger"></span>
         </div>
+        
         <div class="form-group">
-            <label for="claim-date">Claim Date</label>
-            <input type="date" id="claim-date" required>
+            <label asp-for="ClaimDate"></label>
+            <input asp-for="ClaimDate" type="date" class="form-control" required>
+            <span asp-validation-for="ClaimDate" class="text-danger"></span>
         </div>
+        
         <div class="form-group">
-            <label for="category">Category</label>
-            <select id="category" required>
+            <label asp-for="Category"></label>
+            <select asp-for="Category" class="form-control" required>
                 <option value="">Select Category</option>
                 <option value="labor">Labor</option>
                 <option value="materials">Materials</option>
                 <option value="equipment">Equipment</option>
                 <option value="other">Other</option>
             </select>
+            <span asp-validation-for="Category" class="text-danger"></span>
         </div>
+        
         <div class="form-group">
-            <label for="description">Hours Worked</label>
-            <textarea id="description" rows="3" required></textarea>
+            <label asp-for="HoursWorked"></label>
+            <input asp-for="HoursWorked" type="number" class="form-control" step="1" min="0" required>
+            <span asp-validation-for="HoursWorked" class="text-danger"></span>
         </div>
 
         <div class="form-group">
-            <label for="description">Hourly rate</label>
-            <textarea id="description" rows="3" required></textarea>
+            <label asp-for="Rate"></label>
+            <input asp-for="Rate" type="number" class="form-control" step="0.01" min="0" required>
+            <span asp-validation-for="Rate" class="text-danger"></span>
         </div>
 
         <div class="form-group">
-            <label for="amount">Amount</label>
-            <input type="number" id="amount" step="0.01" min="0" required>
+            <label>Calculated Amount</label>
+            <input type="number" class="form-control" value="@(Model?.HoursWorked * Model?.Rate ?? 0)" readonly>
+            <small class="form-text text-muted">This is automatically calculated</small>
         </div>
+        
         <div class="form-group">
-            <label for="receipt">Upload Receipt (Optional)</label>
-            <input type="file" id="receipt">
+            <label asp-for="Receipt">Upload Receipt (Optional)</label>
+            <input asp-for="Receipt" type="file" class="form-control-file">
+            <span asp-validation-for="Receipt" class="text-danger"></span>
         </div>
+        
         <div class="form-actions">
-            <button type="submit" class="btn-primary">Submit Claim</button>
-            <button type="reset" class="btn-secondary">Clear Form</button>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-paper-plane"></i> Submit Claim
+            </button>
+            <button type="reset" class="btn btn-secondary">Clear Form</button>
+            <a href="@Url.Action("Index")" class="btn btn-info">View Submitted Claims</a>
         </div>
     </form>
 </div>
+
+@section Scripts {
+    <script>
+        // Auto-calculate amount when hours or rate changes
+        document.getElementById('Hours')?.addEventListener('input', calculateAmount);
+        document.getElementById('Rate')?.addEventListener('input', calculateAmount);
+        
+        function calculateAmount() {
+            const hours = parseFloat(document.getElementById('Hours')?.value) || 0;
+            const rate = parseFloat(document.getElementById('Rate')?.value) || 0;
+            const amount = hours * rate;
+            document.querySelector('input[readonly]').value = amount.toFixed(2);
+        }
+    </script>
+
+        }

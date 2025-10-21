@@ -1,53 +1,92 @@
-﻿@{
+﻿@using Prog6212_POE.Controllers
+@model List<ClaimModel>
+
+@{
     ViewData["Title"] = "Management";
+
+    // Get statistics
+    var allClaims = SubmitController.GetClaims();
+    var totalClaims = allClaims.Count;
+    var pendingClaims = allClaims.Count(c => c.Status == "Pending");
+    var totalAmount = allClaims.Sum(c => c.Amount);
 }
 
 <div id="management" class="view active">
     <h2>Management Dashboard</h2>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success">@TempData["Message"]</div>
+    }
+
     <div class="stats-container">
         <div class="stat-card">
             <h3>Total Claims</h3>
-            <p class="stat-value">0</p>
+            <p class="stat-value">@totalClaims</p>
         </div>
         <div class="stat-card">
             <h3>Pending Approval</h3>
-            <p class="stat-value">0</p>
+            <p class="stat-value">@pendingClaims</p>
         </div>
         <div class="stat-card">
             <h3>Total Amount</h3>
-            <p class="stat-value">R0</p>
+            <p class="stat-value">R@totalAmount.ToString("F2")</p>
         </div>
     </div>
 
     <h3>Claims Requiring Attention</h3>
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Submitted</th>
-                <th>Contract</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-       <tbody>
-            <tr>
-                <td>6212</td>
-                <td>2025-09-12</td>
-                <td>Prog 2025</td>
-                <td>R675.00</td>
-                <td><span class="status pending">Pending</span></td>
-                <td>
-                    <button class="btn-sm btn-primary">Review</button>
-                </td>
-            </tr>
-            <tr>
-                
-            </tr>
-        </tbody>
-    </table>
 
+    @if (!Model.Any())
+    {
+        <p>No claims requiring attention at this time.</p>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Submitted</th>
+                    <th>Contract</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var claim in Model)
+                {
+                    <tr>
+                        <td>@claim.Id</td>
+                        <td>@claim.ClaimDate.ToString("yyyy-MM-dd")</td>
+                        <td>@claim.Contract</td>
+                        <td>R@claim.Amount.ToString("F2")</td>
+                        <td><span class="status pending">@claim.Status</span></td>
+                        <td>
+                            <div class="action-buttons">
+                                <form method="post" asp-action="ApproveClaim" style="display: inline;">
+                                    <input type="hidden" name="id" value="@claim.Id" />
+                                    <button type="submit" class="btn-sm btn-success"
+                                            onclick="return confirm('Approve claim #@claim.Id?')">
+                                        Approve
+                                    </button>
+                                </form>
+                                <form method="post" asp-action="RejectClaim" style="display: inline;">
+                                    <input type="hidden" name="id" value="@claim.Id" />
+                                    <button type="submit" class="btn-sm btn-danger"
+                                            onclick="return confirm('Reject claim #@claim.Id?')">
+                                        Reject
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <!-- Generate Reports Section -->
     <div class="report-controls" style="margin-top: 30px;">
         <h3>Generate Reports</h3>
         <div class="form-group">
@@ -62,9 +101,150 @@
             <label for="report-period">Period</label>
             <input type="month" id="report-period">
         </div>
-        <button class="btn-primary">Generate Report</button>
+        <button class="btn-primary" onclick="generateReport()">Generate Report</button>
     </div>
 </div>
 
+@section Scripts {
+    <script>
+        function generateReport() {
+            const reportType = document.getElementById('report-type').value;
+            const reportPeriod = document.getElementById('report-period').value;
 
+            if (!reportPeriod) {
+                alert('Please select a period for the report.');
+                return;
+            }
 
+            alert(`Generating ${reportType} report for ${reportPeriod}...`);
+        }
+
+        // Set default report period to current month
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('report-period').value = currentMonth;
+        });
+    </script>
+}
+
+<style>
+    .stats-container {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        flex: 1;
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+        text-align: center;
+    }
+
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #6c757d;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+    .stat-value {
+        margin: 0;
+        font-size: 24px;
+        font-weight: bold;
+        color: #007bff;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .data-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+
+    .status {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+        .status.pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 0 2px;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .report-controls {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+    }
+</style>
