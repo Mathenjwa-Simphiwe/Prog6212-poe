@@ -5,60 +5,257 @@
     ViewData["Title"] = "Track Claims";
 }
 
-<div id="track-claims" class="view active">
-    <h2>Your Claims</h2>
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-search"></i> Track Your Claims
+                </h2>
+                <a asp-controller="Submit" asp-action="Index" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Submit New Claim
+                </a>
+            </div>
 
-    @if (!Model.Any())
-    {
-        <p>You haven't submitted any claims yet.</p>
-    }
-    else
-    {
-        <div class="filter-controls">
-            <div class="form-group">
-                <label for="status-filter">Status</label>
-                <select id="status-filter">
-                    <option value="all">All Statuses</option>
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
-                </select>
+            <!-- Status Summary -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <h3>@Model.Count(c => c.Status == "Pending")</h3>
+                            <p>Pending</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h3>@Model.Count(c => c.Status == "Approved")</h3>
+                            <p>Approved</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <h3>@Model.Count(c => c.Status == "Rejected")</h3>
+                            <p>Rejected</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h3>R@(Model.Sum(c => c.Amount).ToString("F2"))</h3>
+                            <p>Total Amount</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="month-filter">Month</label>
-                <input type="month" id="month-filter">
-            </div>
-            <button class="btn-primary">Apply Filters</button>
+
+            @if (!Model.Any())
+            {
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i>
+                    <h4>No Claims Found</h4>
+                    <p>You haven't submitted any claims yet.</p>
+                    <a asp-controller="Submit" asp-action="Index" class="btn btn-primary">Submit Your First Claim</a>
+                </div>
+            }
+            else
+            {
+                <!-- Filter Controls -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-filter"></i> Filter Claims</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="status-filter">Status</label>
+                                <select id="status-filter" class="form-control">
+                                    <option value="all">All Statuses</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="month-filter">Month</label>
+                                <input type="month" id="month-filter" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label>&nbsp;</label>
+                                <button class="btn btn-outline-primary w-100" onclick="applyFilters()">
+                                    <i class="fas fa-search"></i> Apply Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Claims Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-list"></i> Your Claims</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Date</th>
+                                        <th>Contract</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var claim in Model.OrderByDescending(c => c.ClaimDate))
+                                    {
+                                        <tr class="claim-row" data-status="@claim.Status.ToLower()">
+                                            <td><strong>#@claim.Id</strong></td>
+                                            <td>@claim.ClaimDate.ToString("yyyy-MM-dd")</td>
+                                            <td>@claim.Contract</td>
+                                            <td><strong>R@claim.Amount.ToString("F2")</strong></td>
+                                            <td>
+                                                <span class="badge @GetStatusBadgeClass(claim.Status)">
+                                                    @claim.Status
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="#" class="btn btn-info btn-sm view-details"
+                                                   data-claim-id="@claim.Id"
+                                                   data-toggle="modal" data-target="#claimDetailsModal">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
-
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Date</th>
-                    <th>Contract</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var claim in Model)
-                {
-                    <tr>
-                        <td>@claim.Id</td>
-                        <td>@claim.ClaimDate.ToString("yyyy-MM-dd")</td>
-                        <td>@claim.Contract</td>
-                        <td>R@claim.Amount.ToString("F2")</td>
-                        <td>
-                            <span class="status @claim.Status.ToLower()">@claim.Status</span>
-                        </td>
-                        <td>
-                            <a asp-action="Details" asp-route-id="@claim.Id" class="btn-sm">View</a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
+    </div>
 </div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="claimDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Claim Details</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="claimDetailsContent">
+                <!-- Details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function applyFilters() {
+            const statusFilter = document.getElementById('status-filter').value;
+            const monthFilter = document.getElementById('month-filter').value;
+
+            const rows = document.querySelectorAll('.claim-row');
+
+            rows.forEach(row => {
+                const status = row.getAttribute('data-status');
+                const rowDate = row.querySelector('td:nth-child(2)').textContent;
+                const rowMonth = rowDate.substring(0, 7); // Get YYYY-MM
+
+                let showRow = true;
+
+                // Status filter
+                if (statusFilter !== 'all' && status !== statusFilter) {
+                    showRow = false;
+                }
+
+                // Month filter
+                if (monthFilter && rowMonth !== monthFilter) {
+                    showRow = false;
+                }
+
+                row.style.display = showRow ? '' : 'none';
+            });
+        }
+
+        // View details functionality
+        document.querySelectorAll('.view-details').forEach(button => {
+            button.addEventListener('click', function() {
+                const claimId = this.getAttribute('data-claim-id');
+                loadClaimDetails(claimId);
+            });
+        });
+
+        function loadClaimDetails(claimId) {
+            // For now, we'll show basic info. In a real app, you'd fetch from API
+            const claimRow = document.querySelector(`[data-claim-id="${claimId}"]`).closest('tr');
+            const claimData = {
+                id: claimId,
+                date: claimRow.cells[1].textContent,
+                contract: claimRow.cells[2].textContent,
+                amount: claimRow.cells[3].textContent,
+                status: claimRow.cells[4].textContent.trim()
+            };
+
+            document.getElementById('claimDetailsContent').innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Claim ID:</strong> ${claimData.id}</p>
+                        <p><strong>Submission Date:</strong> ${claimData.date}</p>
+                        <p><strong>Contract:</strong> ${claimData.contract}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Amount:</strong> ${claimData.amount}</p>
+                        <p><strong>Status:</strong> ${claimData.status}</p>
+                        <p><strong>Last Updated:</strong> Just now</p>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h6>Status History</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Submitted
+                            <span class="text-muted">${claimData.date}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            ${claimData.status}
+                            <span class="text-muted">Now</span>
+                        </li>
+                    </ul>
+                </div>
+            `;
+        }
+
+        // Set default month to current month
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('month-filter').value = currentMonth;
+        });
+    </script>
+}
+
+@functions {
+    public string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Approved" => "badge-success",
+            "Rejected" => "badge-danger",
+            "Pending" => "badge-warning",
+            _ => "badge-secondary"
+        };
+    }
+}
