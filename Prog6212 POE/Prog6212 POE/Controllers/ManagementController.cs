@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Prog6212_POE.Models;
+using Prog6212_POE.ViewModel;
 
 namespace Prog6212_POE.Controllers
 {

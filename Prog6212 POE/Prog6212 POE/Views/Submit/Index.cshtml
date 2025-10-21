@@ -59,11 +59,19 @@
             <input type="number" class="form-control" value="@(Model?.HoursWorked * Model?.Rate ?? 0)" readonly>
             <small class="form-text text-muted">This is automatically calculated</small>
         </div>
-        
+
         <div class="form-group">
-            <label asp-for="Receipt">Upload Receipt (Optional)</label>
-            <input asp-for="Receipt" type="file" class="form-control-file">
+            <label asp-for="Receipt">Upload Supporting Document (Optional)</label>
+            <div class="custom-file">
+                <input asp-for="Receipt" type="file" class="custom-file-input"
+                       id="receiptUpload"
+                       accept=".pdf,.docx,.xlsx"
+                       onchange="displayFileName(this)">
+                <label class="custom-file-label" for="receiptUpload">Choose file (PDF, DOCX, XLSX - max 5MB)</label>
+            </div>
             <span asp-validation-for="Receipt" class="text-danger"></span>
+            <small class="form-text text-muted">Allowed formats: PDF, DOCX, XLSX. Maximum file size: 5MB</small>
+            <div id="file-name-display" class="mt-2 text-success"></div>
         </div>
         
         <div class="form-actions">
@@ -88,6 +96,49 @@
             const amount = hours * rate;
             document.querySelector('input[readonly]').value = amount.toFixed(2);
         }
+
+                // File upload functionality
+        function displayFileName(input) {
+            const fileNameDisplay = document.getElementById('file-name-display');
+            const fileLabel = document.querySelector('.custom-file-label');
+
+            if (input.files.length > 0) {
+                const file = input.files[0];
+
+                // Check file size (5MB limit)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File size must be less than 5MB');
+                    input.value = '';
+                    fileNameDisplay.innerHTML = '';
+                    fileLabel.textContent = 'Choose file (PDF, DOCX, XLSX - max 5MB)';
+                    return;
+                }
+
+                // Check file type
+                const allowedTypes = ['.pdf', '.docx', '.xlsx'];
+                const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+                if (!allowedTypes.includes(fileExtension)) {
+                    alert('Please select a PDF, DOCX, or XLSX file');
+                    input.value = '';
+                    fileNameDisplay.innerHTML = '';
+                    fileLabel.textContent = 'Choose file (PDF, DOCX, XLSX - max 5MB)';
+                    return;
+                }
+
+                // Display file name
+                fileLabel.textContent = file.name;
+                fileNameDisplay.innerHTML = `<i class="fas fa-check-circle"></i> Selected: ${file.name}`;
+            } else {
+                fileNameDisplay.innerHTML = '';
+                fileLabel.textContent = 'Choose file (PDF, DOCX, XLSX - max 5MB)';
+            }
+        }
+
+        // Add event listener for form reset to clear file display
+        document.querySelector('button[type="reset"]')?.addEventListener('click', function() {
+            document.getElementById('file-name-display').innerHTML = '';
+            document.querySelector('.custom-file-label').textContent = 'Choose file (PDF, DOCX, XLSX - max 5MB)';
+        });
     </script>
 
         }

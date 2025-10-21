@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Prog6212_POE.ViewModel;
 
 namespace Prog6212_POE.Controllers
 {
@@ -6,7 +7,19 @@ namespace Prog6212_POE.Controllers
     {
         public IActionResult Index()
         {
-            return View();
+            // Get all claims (in real app, filter by user)
+            var userClaims = SubmitController.GetClaims();
+            return View(userClaims);
+        }
+
+        public IActionResult Details(int id)
+        {
+            var claim = SubmitController.GetClaimById(id);
+            if (claim == null)
+            {
+                return NotFound();
+            }
+            return View(claim);
         }
     }
 }

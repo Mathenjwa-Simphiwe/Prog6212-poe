@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Prog6212_POE.Models;
+using Prog6212_POE.ViewModel;
 
 namespace Prog6212_POE.Controllers
 {
     public class SubmitController : Controller
     {
-        private static List<ClaimModel> _claims = new List<ClaimModel>();
+        private static List<ClaimViewModel> _claims = new List<ClaimViewModel>();
         private static int _nextId = 1;
 
         public IActionResult Index()
@@ -14,24 +14,40 @@ namespace Prog6212_POE.Controllers
         }
 
         [HttpPost]
-        public IActionResult SubmitClaim(ClaimModel model)
+        public IActionResult SubmitClaim(ClaimViewModel model)
         {
             if (ModelState.IsValid)
             {
-                // Set ID and calculate amount
+                // Server-side file validation
+                if (model.Receipt != null && model.Receipt.Length > 0)
+                {
+                    // Check file size
+                    if (model.Receipt.Length > 5 * 1024 * 1024) // 5MB
+                    {
+                        ModelState.AddModelError("Receipt", "File size must be less than 5MB");
+                        return View("Index", model);
+                    }
+
+                    // Check file type
+                    var allowedExtensions = new[] { ".pdf", ".docx", ".xlsx" };
+                    var fileExtension = Path.GetExtension(model.Receipt.FileName).ToLower();
+                    if (!allowedExtensions.Contains(fileExtension))
+                    {
+                        ModelState.AddModelError("Receipt", "Only PDF, DOCX, and XLSX files are allowed");
+                        return View("Index", model);
+                    }
+
+                    model.FileName = model.Receipt.FileName;
+
+                    // In a real application, you would save the file here:
+                    // await SaveFileToServer(model.Receipt, model.Id);
+                }
+
                 model.Id = _nextId++;
                 model.Amount = model.HoursWorked * model.Rate;
                 model.Status = "Pending";
 
-                // Handle file name
-                if (model.Receipt != null && model.Receipt.Length > 0)
-                {
-                    model.FileName = model.Receipt.FileName;
-                }
-
-                // Store in memory
                 _claims.Add(model);
-
                 TempData["Success"] = $"Claim #{model.Id} submitted successfully!";
                 return RedirectToAction("Index");
             }
@@ -40,12 +56,12 @@ namespace Prog6212_POE.Controllers
         }
 
         // Method to get claims for other controllers
-        public static List<ClaimModel> GetClaims()
+        public static List<ClaimViewModel> GetClaims()
         {
             return _claims;
         }
 
-        public static ClaimModel GetClaimById(int id)
+        public static ClaimViewModel GetClaimById(int id)
         {
             return _claims.FirstOrDefault(c => c.Id == id);
         }
