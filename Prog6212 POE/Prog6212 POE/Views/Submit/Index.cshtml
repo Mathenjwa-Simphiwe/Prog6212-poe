@@ -1,160 +1,175 @@
-﻿@using Prog6212_POE.ViewModel
-@model ClaimViewModel
+﻿@model Prog6212_POE.Models.ClaimModel
 
 @{
     ViewData["Title"] = "Submit Claim";
 }
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
 
-<div class="alert alert-info">
-    <h5>Debug Info:</h5>
-    <p>Model is null: @(Model == null)</p>
-    <p>TempData Success: @(TempData["Success"]?.ToString() ?? "None")</p>
-</div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>Submit New Claim</h2>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
-    
-  
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success">@TempData["Success"]</div>
+            }
 
-    <!-- Show validation summary -->
-    <div asp-validation-summary="All" class="alert alert-danger"></div>
-    <form method="post" asp-action="SubmitClaim" enctype="multipart/form-data" class="claim-form">
-        <div class="form-group">
-            <label asp-for="Contract"></label>
-            <select asp-for="Contract" class="form-control" required>
-                <option value="">Select Contract</option>
-                <option value="Prog-2025">Prog-2025</option>
-                <option value="Research-2024">Research-2024</option>
-            </select>
-            <span asp-validation-for="Contract" class="text-danger"></span>
-        </div>
-        
-        <div class="form-group">
-            <label asp-for="ClaimDate"></label>
-            <input asp-for="ClaimDate" type="date" class="form-control" required>
-            <span asp-validation-for="ClaimDate" class="text-danger"></span>
-        </div>
-        
-        <div class="form-group">
-            <label asp-for="Category"></label>
-            <select asp-for="Category" class="form-control" required>
-                <option value="">Select Category</option>
-                <option value="labor">Labor</option>
-                <option value="materials">Materials</option>
-                <option value="equipment">Equipment</option>
-                <option value="other">Other</option>
-            </select>
-            <span asp-validation-for="Category" class="text-danger"></span>
-        </div>
-        
-        <div class="form-group">
-            <label asp-for="HoursWorked"></label>
-            <input asp-for="HoursWorked" type="number" class="form-control" step="1" min="0" required>
-            <span asp-validation-for="HoursWorked" class="text-danger"></span>
+            <form method="post" asp-action="SubmitClaim" enctype="multipart/form-data" class="claim-form">
+                @Html.AntiForgeryToken()
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="Contract" class="form-label"></label>
+                            <select asp-for="Contract" class="form-control" required>
+                                <option value="">Select Contract</option>
+                                <option value="Prog-2025">Prog-2025</option>
+                                <option value="Research-2024">Research-2024</option>
+                                <option value="Teaching-2024">Teaching-2024</option>
+                            </select>
+                            <span asp-validation-for="Contract" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="ClaimDate" class="form-label"></label>
+                            <input asp-for="ClaimDate" type="date" class="form-control" required
+                                   max="@DateTime.Now.ToString("yyyy-MM-dd")">
+                            <span asp-validation-for="ClaimDate" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Category" class="form-label"></label>
+                    <select asp-for="Category" class="form-control" required>
+                        <option value="">Select Category</option>
+                        <option value="Teaching">Teaching</option>
+                        <option value="Research">Research</option>
+                        <option value="Administration">Administration</option>
+                        <option value="Consultation">Consultation</option>
+                    </select>
+                    <span asp-validation-for="Category" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label asp-for="HoursWorked" class="form-label"></label>
+                            <input asp-for="HoursWorked" type="number" class="form-control" id="hoursWorked"
+                                   step="1" min="1" max="12" required>
+                            <small class="form-text text-muted">Maximum 12 hours per claim</small>
+                            <span asp-validation-for="HoursWorked" class="text-danger"></span>
+                            <div class="mt-2">
+                                <div class="progress" id="hoursProgress" style="height: 5px;">
+                                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <small id="monthlyLimitWarning" class="text-danger d-none"></small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Hourly Rate</label>
+                            <input type="text" class="form-control" id="rateDisplay"
+                                   value="R @Model.Rate.ToString("F2")" readonly>
+                            <small class="form-text text-muted">Rate set by HR</small>
+                            <input type="hidden" asp-for="Rate" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Calculated Amount</label>
+                    <div class="amount-display alert alert-info">
+                        <h4 id="amountDisplay">R 0.00</h4>
+                        <div id="monthlySummary" class="small mt-1"></div>
+                        <input type="hidden" asp-for="Amount" />
+                    </div>
+                </div>
+
+                <!-- Rest of your form remains the same -->
+                <div class="form-group">
+                    <label asp-for="Receipt" class="form-label">Upload Supporting Document (Optional)</label>
+                    <input asp-for="Receipt" type="file" class="form-control"
+                           accept=".pdf,.docx,.xlsx"
+                           onchange="handleFileUpload(this)">
+                    <small class="form-text text-muted">Allowed formats: PDF, DOCX, XLSX. Maximum file size: 5MB</small>
+                    <span asp-validation-for="Receipt" class="text-danger"></span>
+                    <div id="fileInfo"></div>
+                </div>
+
+                <div class="form-actions mt-4">
+                    <button type="submit" id="submitBtn" class="btn btn-primary btn-lg">
+                        <i class="fas fa-paper-plane"></i> Submit Claim
+                    </button>
+                    <button type="reset" class="btn btn-secondary">Clear Form</button>
+                    <a href="@Url.Action("Index", "Track")" class="btn btn-outline-info">View Submitted Claims</a>
+                </div>
+            </form>
         </div>
 
-        <div class="form-group">
-            <label asp-for="Rate"></label>
-            <input asp-for="Rate" type="number" class="form-control" step="0.01" min="0" required>
-            <span asp-validation-for="Rate" class="text-danger"></span>
-        </div>
-
-        <div class="form-group">
-            <label>Calculated Amount</label>
-            <input type="number" class="form-control" value="@(Model?.HoursWorked * Model?.Rate ?? 0)" readonly>
-            <small class="form-text text-muted">This is automatically calculated</small>
-        </div>
-
-        <div class="form-group">
-            <label asp-for="Receipt">Upload Supporting Document (Optional)</label>
-            <div class="custom-file">
-                <input asp-for="Receipt" type="file" class="custom-file-input"
-                       id="receiptUpload"
-                       accept=".pdf,.docx,.xlsx"
-                       onchange="displayFileName(this)">
-                <label class="custom-file-label" for="receiptUpload">Choose file (PDF, DOCX, XLSX - max 5MB)</label>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Claim Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-clock text-warning"></i> Max 12 hours per claim</li>
+                        <li><i class="fas fa-money-bill-wave text-success"></i> Your rate: R @Model.Rate.ToString("F2")/hour</li>
+                        <li><i class="fas fa-calendar text-info"></i> Max 180 hours per month</li>
+                        <li><i class="fas fa-file-pdf text-danger"></i> Supported files: PDF, DOCX, XLSX</li>
+                        <li><i class="fas fa-hdd text-info"></i> Max file size: 5MB</li>
+                        <li><i class="fas fa-sync text-primary"></i> Auto-calculation enabled</li>
+                    </ul>
+                </div>
             </div>
-            <span asp-validation-for="Receipt" class="text-danger"></span>
-            <small class="form-text text-muted">Allowed formats: PDF, DOCX, XLSX. Maximum file size: 5MB</small>
-            <div id="file-name-display" class="mt-2 text-success"></div>
         </div>
-        
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-paper-plane"></i> Submit Claim
-            </button>
-            <button type="reset" class="btn btn-secondary">Clear Form</button>
-            <a href="@Url.Action("Index")" class="btn btn-info">View Submitted Claims</a>
-        </div>
-    </form>
+    </div>
 </div>
 
 @section Scripts {
     <script>
-        // Auto-calculate amount when hours or rate changes - FIXED IDs
-        document.getElementById('HoursWorked')?.addEventListener('input', calculateAmount);
-        document.getElementById('Rate')?.addEventListener('input', calculateAmount);
+        // Real-time calculation with monthly validation
+        $('#hoursWorked').on('input', function() {
+            var hours = parseInt($(this).val()) || 0;
 
-        function calculateAmount() {
-            const hours = parseFloat(document.getElementById('HoursWorked')?.value) || 0;
-            const rate = parseFloat(document.getElementById('Rate')?.value) || 0;
-            const amount = hours * rate;
-            document.querySelector('input[readonly]').value = amount.toFixed(2);
-        }
+            if (hours > 0) {
+                $.post('@Url.Action("CalculateAmount", "Submit")', { hoursWorked: hours })
+                    .done(function(data) {
+                        $('#amountDisplay').text(data.formattedAmount);
+                        $('#monthlySummary').html(
+                            `Monthly hours: ${data.monthlyHours}/180 | Remaining: ${data.remainingHours} hours`
+                        );
 
-        // File upload functionality
-        function displayFileName(input) {
-            const fileNameDisplay = document.getElementById('file-name-display');
-            const fileLabel = document.querySelector('.custom-file-label');
-
-            if (input.files.length > 0) {
-                const file = input.files[0];
-
-                // Check file size (5MB limit)
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('File size must be less than 5MB');
-                    input.value = '';
-                    fileNameDisplay.innerHTML = '';
-                    fileLabel.textContent = 'Choose file (PDF, DOCX, XLSX - max 5MB)';
-                    return;
-                }
-
-                // Check file type
-                const allowedTypes = ['.pdf', '.docx', '.xlsx'];
-                const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-                if (!allowedTypes.includes(fileExtension)) {
-                    alert('Please select a PDF, DOCX, or XLSX file');
-                    input.value = '';
-                    fileNameDisplay.innerHTML = '';
-                    fileLabel.textContent = 'Choose file (PDF, DOCX, XLSX - max 5MB)';
-                    return;
-                }
-
-                // Display file name
-                fileLabel.textContent = file.name;
-                fileNameDisplay.innerHTML = `<i class="fas fa-check-circle"></i> Selected: ${file.name}`;
+                        if (data.wouldExceed) {
+                            $('#monthlyLimitWarning').text(
+                                `Warning: This would exceed your monthly limit of 180 hours!`
+                            ).removeClass('d-none');
+                            $('#submitBtn').prop('disabled', true);
+                        } else {
+                            $('#monthlyLimitWarning').addClass('d-none');
+                            $('#submitBtn').prop('disabled', false);
+                        }
+                    });
             } else {
-                fileNameDisplay.innerHTML = '';
-                fileLabel.textContent = 'Choose file (PDF, DOCX, XLSX - max 5MB)';
+                $('#amountDisplay').text('R 0.00');
+                $('#monthlySummary').empty();
+                $('#monthlyLimitWarning').addClass('d-none');
+                $('#submitBtn').prop('disabled', false);
             }
-        }
-
-        // Add event listener for form reset to clear file display
-        document.querySelector('button[type="reset"]')?.addEventListener('click', function() {
-            document.getElementById('file-name-display').innerHTML = '';
-            document.querySelector('.custom-file-label').textContent = 'Choose file (PDF, DOCX, XLSX - max 5MB)';
         });
 
-        // Calculate on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            calculateAmount();
+        // Initialize on page load
+        $(document).ready(function() {
+            $('#hoursWorked').trigger('input');
         });
     </script>
+
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }
-        }

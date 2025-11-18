@@ -1,0 +1,99 @@
+﻿@{
+    ViewData["Title"] = "Generate Reports";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-chart-bar"></i> Generate Reports
+        </h2>
+        <a asp-action="Index" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Monthly Claims Report</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="GenerateMonthlyReport" method="post" target="_blank">
+                        <div class="form-group mb-3">
+                            <label for="reportDate" class="form-label">Select Month</label>
+                            <input type="month" id="reportDate" name="reportDate"
+                                   class="form-control" required
+                                   value="@DateTime.Now.ToString("yyyy-MM")" />
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-file-pdf"></i> Generate PDF Report
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Report Types</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <div class="list-group-item">
+                            <h6 class="mb-1">Monthly Claims Report</h6>
+                            <p class="mb-1 text-muted">
+                                Summary of all approved claims for a specific month, grouped by lecturer.
+                            </p>
+                            <small>Includes: Total hours, claims count, and amounts per lecturer.</small>
+                        </div>
+                        <div class="list-group-item">
+                            <h6 class="mb-1">Lecturer Performance Report</h6>
+                            <p class="mb-1 text-muted">
+                                Detailed report of claims and hours worked by each lecturer.
+                            </p>
+                            <small>Coming soon: Department-wise breakdown and analytics.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Reporting Features</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-file-pdf fa-3x text-danger mb-3"></i>
+                                <h5>PDF Export</h5>
+                                <p class="text-muted">Generate professional PDF reports with charts and tables.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                                <h5>Data Analytics</h5>
+                                <p class="text-muted">Analyze claim patterns and departmental spending.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="fas fa-database fa-3x text-success mb-3"></i>
+                                <h5>LINQ Powered</h5>
+                                <p class="text-muted">Advanced data queries using Entity Framework and LINQ.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
