@@ -11,7 +11,7 @@ using QuestPDF.Infrastructure;
 
 namespace Prog6212_POE.Controllers
 {
-    [Authorize(Policy = "HROnly")]
+    [Authorize(Roles = "HR")]
     public class HRController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -56,7 +56,15 @@ namespace Prog6212_POE.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = new ApplicationUser
+                // Check if user already exists
+                var existingUser = await _userManager.FindByEmailAsync(model.Email);
+                if (existingUser != null)
+                {
+                    ModelState.AddModelError("Email", "User with this email already exists.");
+                    return View(model);
+                }
+
+                var newUser = new ApplicationUser
                 {
                     UserName = model.Email,
                     Email = model.Email,
@@ -64,15 +72,18 @@ namespace Prog6212_POE.Controllers
                     LastName = model.LastName,
                     Role = model.Role,
                     Department = model.Department,
-                    HourlyRate = model.HourlyRate
+                    HourlyRate = model.Role == "Lecturer" ? model.HourlyRate : 0,
+                    IsActive = true
                 };
 
-                // Generate temporary password
-                var result = await _userManager.CreateAsync(user, model.TemporaryPassword);
+                // Generate a secure random password
+                var password = GenerateSecurePassword();
+
+                var result = await _userManager.CreateAsync(newUser, password);
 
                 if (result.Succeeded)
                 {
-                    TempData["Success"] = $"User {model.Email} created successfully!";
+                    TempData["Success"] = $"User {model.Email} created successfully! Login details: Email: {model.Email}, Password: {password}";
                     return RedirectToAction("Users");
                 }
 
@@ -82,6 +93,20 @@ namespace Prog6212_POE.Controllers
                 }
             }
             return View(model);
+        }
+
+        private string GenerateSecurePassword()
+        {
+            const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%";
+            var random = new Random();
+            var password = new char[10];
+
+            for (int i = 0; i < password.Length; i++)
+            {
+                password[i] = validChars[random.Next(validChars.Length)];
+            }
+
+            return new string(password);
         }
 
         // Edit User
@@ -195,55 +220,35 @@ namespace Prog6212_POE.Controllers
 
         private byte[] GenerateMonthlyReportPdf(List<MonthlyReportItem> data, DateTime reportDate)
         {
-            var document = Document.Create(container =>
+            // Create a simple text report
+            var reportContent = new System.Text.StringBuilder();
+
+            reportContent.AppendLine("MONTHLY CLAIMS REPORT");
+            reportContent.AppendLine("====================");
+            reportContent.AppendLine($"Period: {reportDate:MMMM yyyy}");
+            reportContent.AppendLine($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm}");
+            reportContent.AppendLine();
+            reportContent.AppendLine("Lecturer\t\tHours\tClaims\tAmount");
+            reportContent.AppendLine("--------\t\t-----\t------\t------");
+
+            foreach (var item in data)
             {
-                container.Page(page =>
-                {
-                    page.Size(PageSizes.A4);
-                    page.Margin(2, Unit.Centimetre);
-                    page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(12));
+                reportContent.AppendLine($"{item.LecturerName}\t\t{item.TotalHours}\t{item.ClaimsCount}\tR {item.TotalAmount:F2}");
+            }
 
-                    page.Header()
-                        .Text($"Monthly Claims Report - {reportDate:MMMM yyyy}")
-                        .SemiBold().FontSize(24).FontColor(Colors.Blue.Medium);
+            if (data.Any())
+            {
+                reportContent.AppendLine();
+                reportContent.AppendLine($"TOTAL:\t\t\t{data.Sum(x => x.TotalHours)}\t{data.Sum(x => x.ClaimsCount)}\tR {data.Sum(x => x.TotalAmount):F2}");
+            }
+            else
+            {
+                reportContent.AppendLine();
+                reportContent.AppendLine("No claims data for the selected period.");
+            }
 
-                    page.Content()
-                        .PaddingVertical(1, Unit.Centimetre)
-                        .Table(table =>
-                        {
-                            table.ColumnsDefinition(columns =>
-                            {
-                                columns.ConstantColumn(150);
-                                columns.RelativeColumn();
-                                columns.RelativeColumn();
-                                columns.RelativeColumn();
-                            });
-
-                            table.Header(header =>
-                            {
-                                header.Cell().Text("Lecturer").SemiBold();
-                                header.Cell().Text("Total Hours").SemiBold();
-                                header.Cell().Text("Claims Count").SemiBold();
-                                header.Cell().Text("Total Amount").SemiBold();
-                            });
-
-                            foreach (var item in data)
-                            {
-                                table.Cell().Text(item.LecturerName);
-                                table.Cell().Text(item.TotalHours.ToString());
-                                table.Cell().Text(item.ClaimsCount.ToString());
-                                table.Cell().Text($"R {item.TotalAmount:F2}");
-                            }
-
-                            // Total row
-                            table.Cell().ColumnSpan(3).Text("TOTAL").SemiBold();
-                            table.Cell().Text($"R {data.Sum(x => x.TotalAmount):F2}").SemiBold();
-                        });
-                });
-            });
-
-            return document.GeneratePdf();
+            // Return as text file
+            return System.Text.Encoding.UTF8.GetBytes(reportContent.ToString());
         }
     }
 

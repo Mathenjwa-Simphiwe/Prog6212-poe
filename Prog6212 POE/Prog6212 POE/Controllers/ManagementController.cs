@@ -6,7 +6,7 @@ using Prog6212_POE.Models;
 
 namespace Prog6212_POE.Controllers
 {
-    [Authorize(Policy = "CoordinatorOnly")]
+    [Authorize(Roles = "Coordinator,Manager,HR")] // Direct roles instead of policy
     public class ManagementController : Controller
     {
         private readonly ApplicationDbContext _context;

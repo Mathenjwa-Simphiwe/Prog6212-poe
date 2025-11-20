@@ -7,7 +7,7 @@ using Prog6212_POE.Models;
 
 namespace Prog6212_POE.Controllers
 {
-    [Authorize(Policy = "LecturerOnly")]
+    [Authorize(Roles = "Lecturer")] // Direct role instead of policy
     public class SubmitController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -22,10 +22,19 @@ namespace Prog6212_POE.Controllers
         public async Task<IActionResult> Index()
         {
             var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var model = new ClaimModel
             {
-                Rate = user.HourlyRate // Auto-populate from HR data
+                // Rate will be auto-populated from User.HourlyRate via the ClaimModel property
             };
+
+            ViewBag.UserFullName = user.FullName;
+            ViewBag.UserHourlyRate = user.HourlyRate;
+
             return View(model);
         }
 
@@ -33,12 +42,16 @@ namespace Prog6212_POE.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SubmitClaim(ClaimModel model)
         {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (ModelState.IsValid)
             {
                 try
                 {
-                    var user = await _userManager.GetUserAsync(User);
-
                     // Monthly validation (180 hours max)
                     var monthlyHours = await _context.Claims
                         .Where(c => c.UserId == user.Id &&
@@ -50,33 +63,34 @@ namespace Prog6212_POE.Controllers
                     if (monthlyHours + model.HoursWorked > 180)
                     {
                         ModelState.AddModelError("HoursWorked",
-                            $"Maximum monthly hours (180) exceeded. You have {monthlyHours} hours this month.");
-                        model.Rate = user.HourlyRate; // Reset rate
+                            $"Maximum monthly hours (180) exceeded. You have {monthlyHours} hours this month. Remaining: {180 - monthlyHours} hours.");
+
+                        ViewBag.UserFullName = user.FullName;
+                        ViewBag.UserHourlyRate = user.HourlyRate;
                         return View("Index", model);
                     }
 
-                    // Server-side file validation
+                    // File validation
                     if (model.Receipt != null && model.Receipt.Length > 0)
                     {
-                        // Check file size
-                        if (model.Receipt.Length > 5 * 1024 * 1024) // 5MB
+                        if (model.Receipt.Length > 5 * 1024 * 1024)
                         {
                             ModelState.AddModelError("Receipt", "File size must be less than 5MB");
-                            model.Rate = user.HourlyRate;
+                            ViewBag.UserFullName = user.FullName;
+                            ViewBag.UserHourlyRate = user.HourlyRate;
                             return View("Index", model);
                         }
 
-                        // Check file type
                         var allowedExtensions = new[] { ".pdf", ".docx", ".xlsx" };
                         var fileExtension = Path.GetExtension(model.Receipt.FileName).ToLower();
                         if (!allowedExtensions.Contains(fileExtension))
                         {
                             ModelState.AddModelError("Receipt", "Only PDF, DOCX, and XLSX files are allowed");
-                            model.Rate = user.HourlyRate;
+                            ViewBag.UserFullName = user.FullName;
+                            ViewBag.UserHourlyRate = user.HourlyRate;
                             return View("Index", model);
                         }
 
-                        // Save file information
                         model.FileName = $"{Guid.NewGuid()}_{model.Receipt.FileName}";
                         var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads", model.FileName);
 
@@ -86,34 +100,72 @@ namespace Prog6212_POE.Controllers
                         }
                     }
 
-                    // Auto-calculate amount using user's rate (not input rate)
-                    model.Amount = model.HoursWorked * user.HourlyRate;
-                    model.Rate = user.HourlyRate; // Use HR-set rate, not user input
-                    model.UserId = user.Id;
-                    model.Status = "Pending";
-                    model.ClaimDate = DateTime.Now;
+                    // Create claim with user data from HR
+                    var claim = new ClaimModel
+                    {
+                        UserId = user.Id,
+                        Contract = model.Contract,
+                        ClaimDate = DateTime.Now,
+                        Category = model.Category,
+                        HoursWorked = model.HoursWorked,
+                        FileName = model.FileName,
+                        Status = "Pending"
+                    };
 
-                    _context.Claims.Add(model);
+                    _context.Claims.Add(claim);
                     await _context.SaveChangesAsync();
 
-                    // Automated notification
-                    await SendClaimNotification(model);
-
-                    TempData["Success"] = $"Claim #{model.Id} submitted successfully! Total amount: R {model.Amount:F2}";
+                    TempData["Success"] = $"Claim #{claim.Id} submitted successfully! Total amount: R {claim.Amount:F2}";
                     return RedirectToAction("Index");
                 }
                 catch (Exception ex)
                 {
                     ModelState.AddModelError("", "An error occurred while submitting your claim. Please try again.");
-                    // Log the exception
+                    System.Diagnostics.Debug.WriteLine($"Claim submission error: {ex.Message}");
                 }
             }
 
-            // If we got this far, something failed; redisplay form
-            var user = await _userManager.GetUserAsync(User);
-            model.Rate = user.HourlyRate;
+            // If we got this far, something failed
+            ViewBag.UserFullName = user.FullName;
+            ViewBag.UserHourlyRate = user.HourlyRate;
             return View("Index", model);
         }
+
+        [HttpPost]
+        public async Task<JsonResult> CalculateAmount(int hoursWorked)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Json(new { error = "User not found" });
+            }
+
+            var amount = hoursWorked * user.HourlyRate;
+
+            // Monthly validation
+            var monthlyHours = await _context.Claims
+                .Where(c => c.UserId == user.Id &&
+                           c.ClaimDate.Month == DateTime.Now.Month &&
+                           c.ClaimDate.Year == DateTime.Now.Year &&
+                           c.Status != "Rejected")
+                .SumAsync(c => c.HoursWorked);
+
+            var remainingHours = 180 - monthlyHours;
+            var wouldExceed = (monthlyHours + hoursWorked) > 180;
+            var canSubmit = hoursWorked > 0 && hoursWorked <= 12 && !wouldExceed;
+
+            return Json(new
+            {
+                amount = amount,
+                formattedAmount = $"R {amount:F2}",
+                hourlyRate = user.HourlyRate,
+                monthlyHours = monthlyHours,
+                remainingHours = remainingHours,
+                wouldExceed = wouldExceed,
+                canSubmit = canSubmit
+            });
+        }
+
 
         private async Task SendClaimNotification(ClaimModel claim)
         {
@@ -126,34 +178,7 @@ namespace Prog6212_POE.Controllers
             // 3. Log to system notifications
         }
 
-        // AJAX endpoint for real-time calculation
-        [HttpPost]
-        public async Task<JsonResult> CalculateAmount(int hoursWorked)
-        {
-            var user = await _userManager.GetUserAsync(User);
-            var amount = hoursWorked * user.HourlyRate;
-
-            // Check monthly limit
-            var monthlyHours = await _context.Claims
-                .Where(c => c.UserId == user.Id &&
-                           c.ClaimDate.Month == DateTime.Now.Month &&
-                           c.ClaimDate.Year == DateTime.Now.Year &&
-                           c.Status != "Rejected")
-                .SumAsync(c => c.HoursWorked);
-
-            var remainingHours = 180 - monthlyHours;
-            var wouldExceed = (monthlyHours + hoursWorked) > 180;
-
-            return Json(new
-            {
-                amount = amount,
-                formattedAmount = $"R {amount:F2}",
-                hourlyRate = user.HourlyRate,
-                monthlyHours = monthlyHours,
-                remainingHours = remainingHours,
-                wouldExceed = wouldExceed
-            });
-        }
+       
 
         // Remove the static methods and replace with database calls
         public static List<ClaimModel> GetClaims()

@@ -8,7 +8,7 @@ namespace Prog6212_POE.Data
         public static async Task Initialize(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             // Ensure database is created
-            context.Database.EnsureCreated();
+            await context.Database.EnsureCreatedAsync();
 
             // Create HR user if doesn't exist
             if (!userManager.Users.Any(u => u.Role == "HR"))
@@ -31,7 +31,7 @@ namespace Prog6212_POE.Data
                 }
             }
 
-            // Create sample lecturer if none exist
+            // Create Lecturer user if doesn't exist
             if (!userManager.Users.Any(u => u.Role == "Lecturer"))
             {
                 var lecturer = new ApplicationUser
@@ -48,7 +48,7 @@ namespace Prog6212_POE.Data
                 await userManager.CreateAsync(lecturer, "Lecturer123!");
             }
 
-            // Create sample coordinator if none exist
+            // Create Coordinator user if doesn't exist
             if (!userManager.Users.Any(u => u.Role == "Coordinator"))
             {
                 var coordinator = new ApplicationUser
@@ -63,6 +63,23 @@ namespace Prog6212_POE.Data
                 };
 
                 await userManager.CreateAsync(coordinator, "Coordinator123!");
+            }
+
+            // Create Manager user if doesn't exist
+            if (!userManager.Users.Any(u => u.Role == "Manager"))
+            {
+                var manager = new ApplicationUser
+                {
+                    UserName = "manager@university.com",
+                    Email = "manager@university.com",
+                    FirstName = "Michael",
+                    LastName = "Brown",
+                    Role = "Manager",
+                    Department = "Faculty of Science",
+                    HourlyRate = 0
+                };
+
+                await userManager.CreateAsync(manager, "Manager123!");
             }
 
             await context.SaveChangesAsync();

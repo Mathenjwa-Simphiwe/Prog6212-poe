@@ -15,6 +15,27 @@ namespace Prog6212_POE.Controllers
 
         public IActionResult Index()
         {
+            // Show different dashboard based on role
+            if (User.Identity.IsAuthenticated)
+            {
+                if (User.IsInRole("Lecturer"))
+                {
+                    ViewBag.UserRole = "Lecturer";
+                }
+                else if (User.IsInRole("Coordinator"))
+                {
+                    ViewBag.UserRole = "Coordinator";
+                }
+                else if (User.IsInRole("Manager"))
+                {
+                    ViewBag.UserRole = "Manager";
+                }
+                else if (User.IsInRole("HR"))
+                {
+                    ViewBag.UserRole = "HR";
+                }
+            }
+
             return View();
         }
 

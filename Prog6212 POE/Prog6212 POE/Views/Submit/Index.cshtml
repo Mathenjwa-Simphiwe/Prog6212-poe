@@ -1,5 +1,4 @@
 ﻿@model Prog6212_POE.Models.ClaimModel
-
 @{
     ViewData["Title"] = "Submit Claim";
 }
@@ -17,6 +16,35 @@
             <form method="post" asp-action="SubmitClaim" enctype="multipart/form-data" class="claim-form">
                 @Html.AntiForgeryToken()
 
+                <!-- Lecturer Info Display -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Your Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Name</label>
+                                    <input type="text" class="form-control" value="@ViewBag.UserFullName" readonly>
+                                    <small class="form-text text-muted">Set by HR</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Hourly Rate</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R</span>
+                                        <input type="text" class="form-control" value="@ViewBag.UserHourlyRate.ToString("F2")" readonly>
+                                    </div>
+                                    <small class="form-text text-muted">Set by HR</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Claim Details -->
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
@@ -53,31 +81,17 @@
                     <span asp-validation-for="Category" class="text-danger"></span>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label asp-for="HoursWorked" class="form-label"></label>
-                            <input asp-for="HoursWorked" type="number" class="form-control" id="hoursWorked"
-                                   step="1" min="1" max="12" required>
-                            <small class="form-text text-muted">Maximum 12 hours per claim</small>
-                            <span asp-validation-for="HoursWorked" class="text-danger"></span>
-                            <div class="mt-2">
-                                <div class="progress" id="hoursProgress" style="height: 5px;">
-                                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
-                                </div>
-                                <small id="monthlyLimitWarning" class="text-danger d-none"></small>
-                            </div>
+                <div class="form-group">
+                    <label asp-for="HoursWorked" class="form-label"></label>
+                    <input asp-for="HoursWorked" type="number" class="form-control" id="hoursWorked"
+                           step="1" min="1" max="12" required>
+                    <small class="form-text text-muted">Maximum 12 hours per claim</small>
+                    <span asp-validation-for="HoursWorked" class="text-danger"></span>
+                    <div class="mt-2">
+                        <div class="progress" id="hoursProgress" style="height: 5px;">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
                         </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="form-label">Hourly Rate</label>
-                            <input type="text" class="form-control" id="rateDisplay"
-                                   value="R @Model.Rate.ToString("F2")" readonly>
-                            <small class="form-text text-muted">Rate set by HR</small>
-                            <input type="hidden" asp-for="Rate" />
-                        </div>
+                        <small id="monthlyLimitWarning" class="text-danger d-none"></small>
                     </div>
                 </div>
 
@@ -86,11 +100,9 @@
                     <div class="amount-display alert alert-info">
                         <h4 id="amountDisplay">R 0.00</h4>
                         <div id="monthlySummary" class="small mt-1"></div>
-                        <input type="hidden" asp-for="Amount" />
                     </div>
                 </div>
 
-                <!-- Rest of your form remains the same -->
                 <div class="form-group">
                     <label asp-for="Receipt" class="form-label">Upload Supporting Document (Optional)</label>
                     <input asp-for="Receipt" type="file" class="form-control"
@@ -118,12 +130,12 @@
                 </div>
                 <div class="card-body">
                     <ul class="list-unstyled">
-                        <li><i class="fas fa-clock text-warning"></i> Max 12 hours per claim</li>
-                        <li><i class="fas fa-money-bill-wave text-success"></i> Your rate: R @Model.Rate.ToString("F2")/hour</li>
-                        <li><i class="fas fa-calendar text-info"></i> Max 180 hours per month</li>
-                        <li><i class="fas fa-file-pdf text-danger"></i> Supported files: PDF, DOCX, XLSX</li>
-                        <li><i class="fas fa-hdd text-info"></i> Max file size: 5MB</li>
-                        <li><i class="fas fa-sync text-primary"></i> Auto-calculation enabled</li>
+                        <li><i class="fas fa-user text-primary me-2"></i> Name: @ViewBag.UserFullName</li>
+                        <li><i class="fas fa-money-bill-wave text-success me-2"></i> Rate: R @ViewBag.UserHourlyRate.ToString("F2")/hour</li>
+                        <li><i class="fas fa-clock text-warning me-2"></i> Max 12 hours per claim</li>
+                        <li><i class="fas fa-calendar text-info me-2"></i> Max 180 hours per month</li>
+                        <li><i class="fas fa-file-pdf text-danger me-2"></i> Supported files: PDF, DOCX, XLSX</li>
+                        <li><i class="fas fa-hdd text-info me-2"></i> Max file size: 5MB</li>
                     </ul>
                 </div>
             </div>
@@ -137,9 +149,14 @@
         $('#hoursWorked').on('input', function() {
             var hours = parseInt($(this).val()) || 0;
 
-            if (hours > 0) {
+            if (hours > 0 && hours <= 12) {
                 $.post('@Url.Action("CalculateAmount", "Submit")', { hoursWorked: hours })
                     .done(function(data) {
+                        if (data.error) {
+                            alert(data.error);
+                            return;
+                        }
+
                         $('#amountDisplay').text(data.formattedAmount);
                         $('#monthlySummary').html(
                             `Monthly hours: ${data.monthlyHours}/180 | Remaining: ${data.remainingHours} hours`
@@ -152,14 +169,17 @@
                             $('#submitBtn').prop('disabled', true);
                         } else {
                             $('#monthlyLimitWarning').addClass('d-none');
-                            $('#submitBtn').prop('disabled', false);
+                            $('#submitBtn').prop('disabled', !data.canSubmit);
                         }
+                    })
+                    .fail(function() {
+                        alert('Error calculating amount. Please try again.');
                     });
             } else {
                 $('#amountDisplay').text('R 0.00');
                 $('#monthlySummary').empty();
                 $('#monthlyLimitWarning').addClass('d-none');
-                $('#submitBtn').prop('disabled', false);
+                $('#submitBtn').prop('disabled', hours <= 0 || hours > 12);
             }
         });
 
@@ -167,6 +187,21 @@
         $(document).ready(function() {
             $('#hoursWorked').trigger('input');
         });
+
+        function handleFileUpload(input) {
+            const fileInfo = document.getElementById('fileInfo');
+            if (input.files.length > 0) {
+                const file = input.files[0];
+                fileInfo.innerHTML = `
+                    <div class="alert alert-info mt-2">
+                        <strong>Selected file:</strong> ${file.name}<br>
+                        <strong>Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB
+                    </div>
+                `;
+            } else {
+                fileInfo.innerHTML = '';
+            }
+        }
     </script>
 
     @{
